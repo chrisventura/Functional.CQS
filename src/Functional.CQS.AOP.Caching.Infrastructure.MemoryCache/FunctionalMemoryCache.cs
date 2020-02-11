@@ -15,8 +15,6 @@ namespace Functional.CQS.AOP.Caching.Infrastructure.MemoryCache
 	/// </summary>
 	public class FunctionalMemoryCache : IFunctionalCache
 	{
-		private static readonly Action _doNothing = () => { };
-
 		private readonly Microsoft.Extensions.Caching.Memory.MemoryCache _cache;
 		private readonly ConcurrentDictionary<string, SemaphoreSlim> _semaphoreSlimLookup = new ConcurrentDictionary<string, SemaphoreSlim>();
 		private readonly ConcurrentDictionary<string, string> _keyToGroupKeyAssociationLookup = new ConcurrentDictionary<string, string>();
@@ -58,7 +56,7 @@ namespace Functional.CQS.AOP.Caching.Infrastructure.MemoryCache
 				{
 					_keyToGroupKeyAssociationLookup.GetOrAdd(key, _ => gk);
 					_groupKeyToKeyAssociationLookup.GetOrAdd(gk, _ => new ConcurrentDictionary<string, byte>()).TryAdd(key, 0);
-				}, () => { });
+				});
 
 				var cacheEntryOptions = new MemoryCacheEntryOptions()
 					.SetPriority(CacheItemPriority.Normal)
@@ -161,20 +159,19 @@ namespace Functional.CQS.AOP.Caching.Infrastructure.MemoryCache
 		{
 			return Result.Try(() =>
 			{
-				_cancellationTokenSourceLookupByKey.TryRemove(key).Apply(cts => cts.Cancel(), _doNothing);
+				_cancellationTokenSourceLookupByKey.TryRemove(key).Apply(cts => cts.Cancel());
 				_keyToGroupKeyAssociationLookup.TryRemove(key).Apply(groupKey =>
 				{
 					_groupKeyToKeyAssociationLookup.TryGetValue(groupKey).Apply(x =>
 					{
 						x.TryRemove(key);
-						if (x.Any())
-							return;
-
-						_cancellationTokenSourceLookupByGroupKey.TryRemove(groupKey).Apply(cts => cts.Cancel(), _doNothing);
-						_groupKeyToKeyAssociationLookup.TryRemove(groupKey);
-
-					}, _doNothing);
-				}, _doNothing);
+						if (!x.Any())
+						{
+							_cancellationTokenSourceLookupByGroupKey.TryRemove(groupKey).Apply(cts => cts.Cancel());
+							_groupKeyToKeyAssociationLookup.TryRemove(groupKey);
+						}
+					});
+				});
 
 				return Unit.Value;
 			});
@@ -188,14 +185,8 @@ namespace Functional.CQS.AOP.Caching.Infrastructure.MemoryCache
 		{
 			return Result.Try(() =>
 			{
-				_groupKeyToKeyAssociationLookup.TryRemove(groupKey).Apply(associatedKeys =>
-				{
-					associatedKeys.Keys.Apply(key =>
-					{
-						_cancellationTokenSourceLookupByKey.TryRemove(key).Apply(cts => cts.Cancel(), _doNothing);
-					});
-				}, _doNothing);
-				_cancellationTokenSourceLookupByGroupKey.TryRemove(groupKey).Apply(cts => cts.Cancel(), _doNothing);
+				_groupKeyToKeyAssociationLookup.TryRemove(groupKey).Apply(associatedKeys => associatedKeys.Keys.Apply(key => _cancellationTokenSourceLookupByKey.TryRemove(key).Apply(cts => cts.Cancel())));
+				_cancellationTokenSourceLookupByGroupKey.TryRemove(groupKey).Apply(cts => cts.Cancel());
 
 				return Unit.Value;
 			});
@@ -284,9 +275,9 @@ namespace Functional.CQS.AOP.Caching.Infrastructure.MemoryCache
 			_cancellationTokenSourceLookupByKey.TryRemove(keyAsString);
 			_keyToGroupKeyAssociationLookup.TryRemove(keyAsString).Apply(groupKey =>
 			{
-				_groupKeyToKeyAssociationLookup.TryGetValue(groupKey).Apply(x => x.TryRemove(keyAsString), _doNothing);
+				_groupKeyToKeyAssociationLookup.TryGetValue(groupKey).Apply(x => x.TryRemove(keyAsString));
 				_cancellationTokenSourceLookupByGroupKey.TryRemove(groupKey);
-			}, _doNothing);
+			});
 		}
 
 		private class CachedSemaphoreDisposable : IDisposable
