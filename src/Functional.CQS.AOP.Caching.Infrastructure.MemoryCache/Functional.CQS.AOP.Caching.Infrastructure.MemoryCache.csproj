@@ -20,9 +20,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Functional.Common.Extensions" Version="1.9.0" />
-    <PackageReference Include="Functional.Primitives" Version="1.9.0" />
-    <PackageReference Include="Functional.Primitives.Extensions" Version="1.9.0" />
+    <PackageReference Include="Functional.Common.Extensions" Version="[2.*, 3.0)" />
+    <PackageReference Include="Functional.Primitives" Version="[2.*, 3.0)" />
+    <PackageReference Include="Functional.Primitives.Extensions" Version="[2.*, 3.0)" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.2.0" />
   </ItemGroup>
 

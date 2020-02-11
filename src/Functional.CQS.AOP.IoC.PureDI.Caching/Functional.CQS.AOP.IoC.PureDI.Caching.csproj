@@ -22,8 +22,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Functional.Primitives" Version="1.9.0" />
-    <PackageReference Include="Functional.Primitives.Extensions" Version="1.9.0" />
+    <PackageReference Include="Functional.Primitives" Version="[2.*, 3.0)" />
+    <PackageReference Include="Functional.Primitives.Extensions" Version="[2.*, 3.0)" />
   </ItemGroup>
 
   <ItemGroup>
